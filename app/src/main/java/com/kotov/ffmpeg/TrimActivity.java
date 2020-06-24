@@ -28,7 +28,7 @@ import java.util.Objects;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class TrimActivity extends AppCompatActivity {
-    private ImageView imageView;
+
     private VideoView videoView;
     private TextView textViewLeft, textViewRight;
     private RangeSeekBar rangeSeekBar;
@@ -39,12 +39,14 @@ public class TrimActivity extends AppCompatActivity {
     private boolean isPlaying = false;
     private TrimFile trimFile;
     private androidx.appcompat.widget.AppCompatEditText editText;
+    private androidx.cardview.widget.CardView cardView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trim);
         videoView = findViewById(R.id.videoView);
+        cardView = findViewById(R.id.cards);
         Intent i = getIntent();
         if (i != null) {
             code = i.getIntExtra("code", -1);
@@ -55,7 +57,6 @@ public class TrimActivity extends AppCompatActivity {
             videoView.setLayoutParams(videoFull());
             videoView.start();
         }
-        imageView = findViewById(R.id.pause);
         textViewRight = findViewById(R.id.tvvRight);
         textViewLeft = findViewById(R.id.tvvLeft);
         rangeSeekBar = findViewById(R.id.seekbar);
@@ -123,9 +124,10 @@ public class TrimActivity extends AppCompatActivity {
     }
 
     private LinearLayout.LayoutParams videoFull() {
+
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) videoView.getLayoutParams();
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) cardView.getLayoutParams();
         params.width = metrics.widthPixels;
         params.height = metrics.heightPixels;
         params.leftMargin = 0;
@@ -134,14 +136,12 @@ public class TrimActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     private void setListeners() {
-        imageView.setOnClickListener(v -> {
+        cardView.setOnClickListener(v -> {
             if (isPlaying) {
-                imageView.setImageResource(R.drawable.ic_play_circle_outline_black_24dp);
                 videoView.pause();
                 isPlaying = false;
             } else {
                 videoView.start();
-                imageView.setImageResource(R.drawable.ic_pause_black_24dp);
                 isPlaying = true;
             }
         });
