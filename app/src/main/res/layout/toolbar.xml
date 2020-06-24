@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_39sdp"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:id="@+id/next"
+        android:layout_width="@dimen/_21sdp"
+        android:layout_height="@dimen/_20sdp"
+        android:layout_gravity="center"
+        android:layout_marginStart="@dimen/_10sdp"
+        android:src="@drawable/ic_menu_black_24dp" />
+
+    <androidx.appcompat.widget.AppCompatEditText
+        android:gravity="center"
+        android:id="@+id/search_edit_frame"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_40sdp"
+        android:layout_gravity="center"
+        android:layout_marginStart="@dimen/_11sdp"
+        android:layout_marginEnd="@dimen/_35sdp"
+        android:background="@null"
+        android:fontFamily="sans-serif-medium"
+        android:hint="@string/app_name"
+        android:textAllCaps="false"
+        android:imeOptions="actionSearch"
+        android:inputType="text"
+        android:textColor="?android:textColorSecondary"
+        android:textSize="@dimen/_13sdp"
+        android:textStyle="bold" />
+</LinearLayout>
