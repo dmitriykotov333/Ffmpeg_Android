@@ -51,4 +51,21 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">?attr/actionBarSize</item>
     </style>
+
+    <style name="DialogFullscreen" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:bottomBright">@color/green_500</item>
+        <item name="android:bottomDark">@color/green_500</item>
+        <item name="android:bottomMedium">@color/green_500</item>
+        <item name="android:centerBright">@color/green_500</item>
+        <item name="android:centerDark">@color/green_500</item>
+        <item name="android:centerMedium">@color/green_500</item>
+        <item name="android:fullBright">@color/green_500</item>
+        <item name="android:fullDark">@color/green_500</item>
+        <item name="android:topBright">@color/green_500</item>
+        <item name="android:topDark">@color/green_500</item>
+    </style>
+
 </resources>

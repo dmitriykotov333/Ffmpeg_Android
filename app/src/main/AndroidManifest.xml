@@ -21,7 +21,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".TrimActivity"/>
-        <activity android:name=".ProgressBarActivity"/>
         <service android:name=".FFMpegService" />
     </application>
 

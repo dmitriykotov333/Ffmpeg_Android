@@ -1,4 +1,4 @@
-package com.kotov.ffmpeg;
+package com.kotov.ffmpeg.view_custom;
 
 
 import android.content.Context;
