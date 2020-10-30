@@ -14,7 +14,6 @@ import androidx.cardview.widget.CardView;
 
 public class CustomToast extends Toast {
 
-    private Context context;
     /**
      * Construct an empty Toast object.  You must call {@link #setView} before you
      * can call {@link #show}.
@@ -24,9 +23,8 @@ public class CustomToast extends Toast {
      */
     public CustomToast(Context context) {
         super(context);
-        this.context = context.getApplicationContext();
     }
-    public void getToast(int drawable, int string, int color, int length) {
+    public static void getToast(Context context, int drawable, int string, int color, int length) {
         Toast toast = new Toast(context);
         toast.setDuration(length);
         View inflate = LayoutInflater.from(context).inflate(R.layout.toast_icon_text, (ViewGroup) null);

@@ -3,10 +3,10 @@ package com.kotov.ffmpeg.trim;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+
 
 import com.kotov.ffmpeg.file.SaveCrop;
 import com.kotov.ffmpeg.trim.interfacevideo.TrimVideo;
@@ -15,22 +15,26 @@ import java.io.File;
 
 public class CropVideo implements TrimVideo {
 
-    private Context context;
     private Uri uri;
     private File dest;
-    public CropVideo(Context context, Uri uri) {
+    private RealPathFromUri realPathFromUri;
+    private Context context;
+
+    public CropVideo(Context context, Uri uri, RealPathFromUri realPathFromUri) {
         this.context = context;
         this.uri = uri;
+        this.realPathFromUri = realPathFromUri;
     }
+
     @SuppressLint("DefaultLocale")
     @Override
     public String[] trimVideo(int a, int b, String n) {
         SaveCrop saveCrop = new SaveCrop();
         dest = saveCrop.saveFile(n);
-        String original_path = getRealPathFromURI(uri);
+        String original_path = realPathFromUri.getPath(uri);
         int duration = (b - a) / 1000;
         addVideo(dest, n);
-        return new String[]{"-ss", "" +  (a / 1000), "-y", "-i", original_path, "-t", "" + duration, "-vcodec", "mpeg4", "-b:v", "2097152", "-b:a", "48000", "-ac", "2", "-ar", "22050", dest.getAbsolutePath()};
+        return new String[]{"-ss", "" + (a / 1000), "-y", "-i", original_path, "-t", "" + duration, "-vcodec", "mpeg4", "-b:v", "2097152", "-b:a", "48000", "-ac", "2", "-ar", "22050", dest.getAbsolutePath()};
     }
 
     /**
@@ -57,21 +61,6 @@ public class CropVideo implements TrimVideo {
 
         }
         return folder;
-    }
-
-    @Override
-    public String getRealPathFromURI(Uri contentURI) {
-        String filePath;
-        Cursor cursor = context.getContentResolver().query(contentURI, null, null, null, null);
-        if (cursor == null) {
-            filePath = contentURI.getPath();
-        } else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            filePath = cursor.getString(idx);
-            cursor.close();
-        }
-        return filePath;
     }
 
     @Override

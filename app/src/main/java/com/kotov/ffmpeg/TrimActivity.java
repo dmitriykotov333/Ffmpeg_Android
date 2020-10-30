@@ -1,88 +1,91 @@
 package com.kotov.ffmpeg;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.ServiceConnection;
+import android.content.Intent;
+import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.annotation.SuppressLint;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Handler;
-import android.os.IBinder;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.VideoView;
+
+
+import com.arthenica.mobileffmpeg.FFmpeg;
 import com.kotov.ffmpeg.trim.VideoActions;
 
 import org.florescu.android.rangeseekbar.RangeSeekBar;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Objects;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
+import androidx.appcompat.widget.AppCompatEditText;
+import androidx.core.content.ContextCompat;
+import butterknife.BindView;
+import butterknife.BindViews;
+import butterknife.ButterKnife;
 
-public class TrimActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnVideoSizeChangedListener {
+public class TrimActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener,
+        MediaPlayer.OnBufferingUpdateListener,
+        MediaPlayer.OnCompletionListener,
+        MediaPlayer.OnPreparedListener,
+        MediaPlayer.OnVideoSizeChangedListener {
 
-    private MediaPlayer mMediaPlayer;
-    private TextureView mPreview;
+
+    @BindView(R.id.textureView)
+    TextureView mPreview;
+    @BindView(R.id.tvvLeft)
+    TextView textViewLeft;
+    @BindView(R.id.tvvRight)
+    TextView textViewRight;
+    @BindView(R.id.seekbar)
+    RangeSeekBar rangeSeekBar;
+    @BindView(R.id.search_edit_frame)
+    AppCompatEditText editText;
+    @BindView(R.id.next)
+    ImageView next;
+
     private Surface surface;
-
-    private TextView textViewLeft, textViewRight;
-    private RangeSeekBar rangeSeekBar;
+    private MediaPlayer mMediaPlayer;
+    private VideoActions videoAction;
     private Uri uri;
     private int code;
-    private boolean isPlaying = true;
-    private androidx.appcompat.widget.AppCompatEditText editText;
-
-    private VideoActions videoAction;
-
-
-    private ServiceConnection mConnection;
-    private FFMpegService ffMpegService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trim);
+        ButterKnife.bind(this);
+        mMediaPlayer = new MediaPlayer();
+        mPreview.setSurfaceTextureListener(this);
         Intent i = getIntent();
         if (i != null) {
             uri = Uri.parse(i.getStringExtra("uri"));
             code = i.getIntExtra("code", -1);
-            isPlaying = true;
+            editText.setHint(i.getStringExtra("name"));
         }
-        getWindows(this);
-        mPreview = findViewById(R.id.textureView);
-        mMediaPlayer = new MediaPlayer();
-        mPreview.setSurfaceTextureListener(this);
-
-        textViewRight = findViewById(R.id.tvvRight);
-        textViewLeft = findViewById(R.id.tvvLeft);
-        rangeSeekBar = findViewById(R.id.seekbar);
-        ImageView next = findViewById(R.id.next);
-        editText = findViewById(R.id.search_edit_frame);
-        editText.setClickable(true);
-        editText.setFocusable(true);
-        editText.setHint(getIntent().getStringExtra("name"));
-        next.setImageResource(R.drawable.ic_keyboard_arrow_left_black_24dp);
+        if (code == 3) {
+            getBackground(R.drawable.grad1);
+        } else {
+            getBackground(R.drawable.grad);
+        }
+        next.setImageResource(R.drawable.ic_arrow_back_black_24dp);
         next.setOnClickListener(v -> finish());
         editText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -100,18 +103,17 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
                 if (s.length() != 0) {
                     next.setImageResource(R.drawable.ic_play_arrow_black_24dp);
                 } else {
-                    next.setImageResource(R.drawable.ic_keyboard_arrow_left_black_24dp);
+                    next.setImageResource(R.drawable.ic_arrow_back_black_24dp);
                 }
                 next.setOnClickListener(v -> {
                     if (s.length() != 0) {
                         videoAction = new VideoActions(getApplicationContext(), uri,
                                 rangeSeekBar.getSelectedMinValue().intValue() * 1000,
-                                rangeSeekBar.getSelectedMaxValue().intValue() * 1000,
-                                Objects.requireNonNull(editText.getText()).toString());
+                                rangeSeekBar.getSelectedMaxValue().intValue() * 1000, s.toString());
                         if (code == 0) {
-                            ffmpegServices(videoAction.getDuration(), videoAction.crop(), videoAction.getFile(videoAction.crop()));
+                            new AsyncTaskFfmpeg().execute(videoAction.crop());
                         } else {
-                            ffmpegServices(videoAction.getDuration(), videoAction.frames(), videoAction.getFile(videoAction.frames()));
+                            new AsyncTaskFfmpeg().execute(videoAction.frames());
                         }
                     } else {
                         finish();
@@ -123,58 +125,57 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         setListeners();
     }
 
+    @SuppressLint("StaticFieldLeak")
+    private class AsyncTaskFfmpeg extends AsyncTask<String, Integer, Void> {
 
-    private void ffmpegServices(int duration, String[] command, String path) {
-        final ProgressDialog progressDialog = new ProgressDialog(this, R.style.DialogFullscreen);
-        progressDialog.setProgressStyle(1);
-        progressDialog.setIcon(R.drawable.wait);
-        progressDialog.setTitle("Processsing");
-        progressDialog.setMessage("Please wait...");
-        progressDialog.setCancelable(false);
-        progressDialog.setMax(100);
-        progressDialog.show();
-        progressDialog.setOnKeyListener((dialog, keyCode, event) -> {
+        private ProgressDialog progress;
 
-            if (keyCode == KeyEvent.KEYCODE_BACK) {
-                new CustomToast(getApplicationContext()).getToast(R.drawable.ic_error_outline, R.string.please_wait, R.color.blue_500, Toast.LENGTH_LONG);
-
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progress = new ProgressDialog(TrimActivity.this);
+            progress.setTitle("Processing");
+            progress.setMessage("Please wait...");
+            progress.setIndeterminate(true);
+            progress.setCancelable(false);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                Drawable drawable = new ProgressBar(TrimActivity.this).getIndeterminateDrawable().mutate();
+                drawable.setColorFilter(ContextCompat.getColor(TrimActivity.this, R.color.colorAccent),
+                        PorterDuff.Mode.SRC_IN);
+                progress.setIndeterminateDrawable(drawable);
             }
 
-            return true;
-        });
-        Intent myIntent = new Intent(TrimActivity.this, FFMpegService.class);
-        myIntent.putExtra("duration", String.valueOf(duration));
-        myIntent.putExtra("command", command);
-        myIntent.putExtra("destination", path);
-        startService(myIntent);
-        mConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
+            progress.setOnKeyListener((dialog, keyCode, event) -> {
 
-                FFMpegService.LocalBinder binder = (FFMpegService.LocalBinder) service;
-                ffMpegService = binder.getServiceInstance();
-                ffMpegService.registerClient(getParent());
-                final Observer<Integer> resultObserver = integer -> {
-                    if (integer < 100) {
-                        progressDialog.setProgress(integer);
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    CustomToast.getToast(getApplicationContext(), R.drawable.ic_error_outline, R.string.please_wait, R.color.blue_500, Toast.LENGTH_LONG);
 
-                    }
-                    if (integer == 100) {
-                        progressDialog.dismiss();
-                        stopService(myIntent);
-                        finish();
-                    }
-                };
-                ffMpegService.getPercentage().observe(TrimActivity.this, resultObserver);
-            }
+                }
 
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
+                return true;
+            });
+            progress.show();
+        }
 
-            }
-        };
+        @Override
+        protected Void doInBackground(String... command) {
+            FFmpeg.execute(command);
+            return null;
+        }
 
-        bindService(myIntent, mConnection, Context.BIND_AUTO_CREATE);
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+            progress.setProgress(values[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            progress.dismiss();
+            CustomToast.getToast(getApplicationContext(), R.drawable.ic_done, R.string.successfully, R.color.green, Toast.LENGTH_LONG);
+            finish();
+        }
     }
 
     @Override
@@ -185,11 +186,8 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
     @Override
     public void onDestroy() {
         super.onDestroy();
-
-        if (mConnection != null) {
-            unbindService(mConnection);
-        }
-        finish();
+        mMediaPlayer.release();
+        mMediaPlayer = null;
     }
 
     @Override
@@ -199,34 +197,15 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
             mMediaPlayer.setDataSource(getApplicationContext(), uri);
             mMediaPlayer.setSurface(surface);
             mMediaPlayer.setOnPreparedListener(this);
-            mMediaPlayer.prepare();
-            mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    mp.start();
-                }
-            });
+            mMediaPlayer.prepareAsync();
+            mMediaPlayer.setOnPreparedListener(MediaPlayer::start);
             mMediaPlayer.setOnBufferingUpdateListener(this);
             mMediaPlayer.setOnCompletionListener(this);
             mMediaPlayer.setOnPreparedListener(this);
             mMediaPlayer.setOnVideoSizeChangedListener(this);
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mMediaPlayer.start();
-            mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mediaPlayer) {
-                    mediaPlayer.start();
-                }
-            });
-
-            mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    mp.start();
-                }
-
-            });
+            mMediaPlayer.setOnPreparedListener(MediaPlayer::start);
+            mMediaPlayer.setOnCompletionListener(MediaPlayer::start);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -238,13 +217,11 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-
         mPreview.getSurfaceTexture().release();
         if (this.surface != null) {
             this.surface.release();
             this.surface = null;
         }
-
         return true;
     }
 
@@ -258,10 +235,8 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         mPreview.setOnClickListener(v -> {
             if (mMediaPlayer.isPlaying()) {
                 mMediaPlayer.pause();
-                isPlaying = false;
             } else {
                 mMediaPlayer.start();
-                isPlaying = true;
             }
         });
     }
@@ -275,29 +250,39 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         return String.format("%02d : %02d : %02d", hr, mn, sec);
     }
 
+    private void getBackground(int drawable) {
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(getResources().getColor(android.R.color.transparent, null));
+        window.setBackgroundDrawable(getResources().getDrawable(drawable, null));
+    }
+
 
     @Override
     protected void onPause() {
         super.onPause();
-
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        if (mMediaPlayer.isPlaying()) {
+            mMediaPlayer.stop();
+        } else {
+            mMediaPlayer.start();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mPreview.requestLayout();
-
+        mMediaPlayer.start();
     }
 
     @Override
     public void onPrepared(MediaPlayer mp) {
-
-        mMediaPlayer.start();
+        mp.start();
     }
 
     @Override
@@ -307,7 +292,7 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
 
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        action(mMediaPlayer);
+        action(mp);
     }
 
     private void action(MediaPlayer mp) {
@@ -327,20 +312,5 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
     @Override
     public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
         action(mp);
-    }
-    private void getWindows(Activity activity) {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = activity.getWindow();
-            Drawable background;
-            if (code == 0) {
-                background = activity.getResources().getDrawable(R.drawable.grad);
-            } else {
-                background = activity.getResources().getDrawable(R.drawable.grad1);
-            }
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(activity.getResources().getColor(android.R.color.transparent));
-            window.setBackgroundDrawable(background);
-        }
     }
 }

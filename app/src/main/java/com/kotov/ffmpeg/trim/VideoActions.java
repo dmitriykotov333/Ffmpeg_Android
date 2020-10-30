@@ -13,13 +13,15 @@ public class VideoActions implements IDuration {
 
     private CropVideo cropVideo;
     private FramesVideo framesVideo;
+    private RealPathFromUri realPathFromUri;
     private int a;
     private int b;
     private String n;
 
     public VideoActions(Context context, Uri uri, int a, int b, String n) {
-        cropVideo = new CropVideo(context, uri);
-        framesVideo = new FramesVideo(context, uri);
+        realPathFromUri = new RealPathFromUri(context);
+        cropVideo = new CropVideo(context, uri, realPathFromUri);
+        framesVideo = new FramesVideo(uri, realPathFromUri);
         this.a = a;
         this.b = b;
         this.n = n;
@@ -32,6 +34,7 @@ public class VideoActions implements IDuration {
     public String[] frames() {
         return framesVideo.trimVideoCadr(a, b, n);
     }
+
     @Override
     public int getDuration() {
         return (b - a) / 1000;

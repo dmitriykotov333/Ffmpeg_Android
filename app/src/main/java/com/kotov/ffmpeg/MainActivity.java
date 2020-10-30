@@ -23,12 +23,57 @@ import java.util.Objects;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatEditText;
 import androidx.core.app.ActivityCompat;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 
 public class MainActivity extends AppCompatActivity {
+    @BindView(R.id.tab_layout)
+    TabLayout tabLayout;
+    @BindView(R.id.pager)
+    CustomViewPager viewPager;
+    @BindView(R.id.search_edit_frame)
+    AppCompatEditText editText;
 
-    private TabLayout tabLayout;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        changeColor(R.drawable.grad);
+        setContentView(R.layout.activity_main);
+        isStoragePermissionGranted();
+        ButterKnife.bind(this);
+        editText.setClickable(false);
+        editText.setFocusable(false);
+        editText.setEnabled(false);
+        viewPager.setPagingEnabled(false);
+        setupViewPager(viewPager);
+        tabLayout.setupWithViewPager(viewPager);
+        tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
+        viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                viewPager.setCurrentItem(tab.getPosition());
+                if (tabLayout.getSelectedTabPosition() == 0) {
+                    changeColor(R.drawable.grad);
+                } else if (tabLayout.getSelectedTabPosition() == 1) {
+                    changeColor(R.drawable.grad1);
+                }
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+
+    }
+
     private void isStoragePermissionGranted() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -37,66 +82,9 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}
-                        ,1);
+                        , 1);
             }
-        }  //permission is automatically granted on sdk<23 upon installation
-
-    }
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        getWindows(this);
-        isStoragePermissionGranted();
-        androidx.appcompat.widget.AppCompatEditText editText = findViewById(R.id.search_edit_frame);
-        editText.setClickable(false);
-        editText.setFocusable(false);
-        editText.setEnabled(false);
-
-        CustomViewPager viewPager = findViewById(R.id.pager);
-        viewPager.setPagingEnabled(false);
-        setupViewPager(viewPager);
-
-        tabLayout = findViewById(R.id.tab_layout);
-        tabLayout.setupWithViewPager(viewPager);
-        tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
-
-
-        viewPager.addOnPageChangeListener(new
-                TabLayout.TabLayoutOnPageChangeListener(tabLayout));
-        tabLayout.addOnTabSelectedListener(new
-                                                   TabLayout.OnTabSelectedListener() {
-                                                       @Override
-                                                       public void onTabSelected(TabLayout.Tab tab) {
-                                                           viewPager.setCurrentItem(tab.getPosition());
-                                                           if (tabLayout.getSelectedTabPosition() == 0) {
-                                                               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                                                   Window window = getWindow();
-                                                                   Drawable background = getResources().getDrawable(R.drawable.grad);
-                                                                   window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                                                                   window.setStatusBarColor(getResources().getColor(android.R.color.transparent));
-                                                                   window.setBackgroundDrawable(background);
-                                                               }
-                                                           } else if (tabLayout.getSelectedTabPosition() == 1) {
-                                                               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                                                   Window window = getWindow();
-                                                                   Drawable background = getResources().getDrawable(R.drawable.grad1);
-                                                                   window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                                                                   window.setStatusBarColor(getResources().getColor(android.R.color.transparent));
-                                                                   window.setBackgroundDrawable(background);
-                                                               }
-                                                           }
-                                                       }
-
-                                                       @Override
-                                                       public void onTabUnselected(TabLayout.Tab tab) {
-                                                       }
-
-                                                       @Override
-                                                       public void onTabReselected(TabLayout.Tab tab) {
-                                                       }
-                                                   });
-
+        }
     }
 
     private void setupViewPager(CustomViewPager viewPager) {
@@ -104,6 +92,14 @@ public class MainActivity extends AppCompatActivity {
         adapter.addFragment(new TabFragment1(), getResources().getString(R.string.tab_labell));
         adapter.addFragment(new TabFragment2(), getResources().getString(R.string.tab_label2));
         viewPager.setAdapter(adapter);
+    }
+
+    private void changeColor(int drawable) {
+        Window window = getWindow();
+        Drawable background = getResources().getDrawable(drawable, null);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(getResources().getColor(android.R.color.transparent, null));
+        window.setBackgroundDrawable(background);
     }
 
     @SuppressLint("IntentReset")
@@ -146,8 +142,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
 
     @Override
@@ -160,19 +166,4 @@ public class MainActivity extends AppCompatActivity {
         super.onRestart();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-
-    private void getWindows(Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = activity.getWindow();
-            Drawable background = activity.getResources().getDrawable(R.drawable.grad);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(activity.getResources().getColor(android.R.color.transparent));
-            window.setBackgroundDrawable(background);
-        }
-    }
 }
