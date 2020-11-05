@@ -9,14 +9,13 @@ import android.provider.MediaStore;
 
 
 import com.kotov.ffmpeg.file.SaveCrop;
-import com.kotov.ffmpeg.trim.interfacevideo.TrimVideo;
+import com.kotov.ffmpeg.trim.interfacevideo.ActionImpl;
 
 import java.io.File;
 
-public class CropVideo implements TrimVideo {
+public class CropVideo implements ActionImpl {
 
     private Uri uri;
-    private File dest;
     private RealPathFromUri realPathFromUri;
     private Context context;
 
@@ -28,9 +27,9 @@ public class CropVideo implements TrimVideo {
 
     @SuppressLint("DefaultLocale")
     @Override
-    public String[] trimVideo(int a, int b, String n) {
+    public String[] action(int a, int b, String n) {
         SaveCrop saveCrop = new SaveCrop();
-        dest = saveCrop.saveFile(n);
+        File dest = saveCrop.saveFile(n);
         String original_path = realPathFromUri.getPath(uri);
         int duration = (b - a) / 1000;
         addVideo(dest, n);
@@ -48,23 +47,5 @@ public class CropVideo implements TrimVideo {
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
         values.put(MediaStore.Video.Media.DATA, videoFile.getAbsolutePath());
         context.getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
-    }
-
-    @Override
-    public File mkDir(String a) {
-        File folder = new File(Environment.getExternalStorageDirectory().getAbsolutePath().concat("/") + a);
-        if (!folder.exists()) {
-            if (folder.mkdir()) {
-
-            }
-        } else {
-
-        }
-        return folder;
-    }
-
-    @Override
-    public File getFIle() {
-        return dest;
     }
 }
