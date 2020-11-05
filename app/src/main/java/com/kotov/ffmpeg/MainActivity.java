@@ -18,6 +18,7 @@ import com.kotov.ffmpeg.custompager.CustomViewPager;
 import com.kotov.ffmpeg.custompager.PagerAdapter;
 import com.kotov.ffmpeg.fragments.TabFragment1;
 import com.kotov.ffmpeg.fragments.TabFragment2;
+import com.kotov.ffmpeg.mvp.Constants;
 
 import java.util.Objects;
 
@@ -121,11 +122,11 @@ public class MainActivity extends AppCompatActivity {
             i.putExtra("uri", Objects.requireNonNull(data.getData()).toString());
             if (requestCode == 100 && resultCode == RESULT_OK) {
                 i.putExtra("name", "Change video name");
-                i.putExtra("code", 0);
+                i.putExtra(Constants.EXTRA_MODE, Constants.PinCodeMode.CROP);
             }
             if (requestCode == 101 && resultCode == RESULT_OK) {
                 i.putExtra("name", "Enter the name of the folder where frames are stored");
-                i.putExtra("code", 1);
+                i.putExtra(Constants.EXTRA_MODE, Constants.PinCodeMode.FRAME);
             }
             startActivity(i);
         }

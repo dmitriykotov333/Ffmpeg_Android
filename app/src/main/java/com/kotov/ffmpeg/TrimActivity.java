@@ -3,6 +3,7 @@ package com.kotov.ffmpeg;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
@@ -27,6 +28,10 @@ import android.widget.Toast;
 
 
 import com.arthenica.mobileffmpeg.FFmpeg;
+import com.kotov.ffmpeg.mvp.Constants;
+import com.kotov.ffmpeg.mvp.TrimContractView;
+import com.kotov.ffmpeg.mvp.VideoActionPresenter;
+import com.kotov.ffmpeg.mvp.VideoActionsModel;
 import com.kotov.ffmpeg.trim.VideoActions;
 
 import org.florescu.android.rangeseekbar.RangeSeekBar;
@@ -40,12 +45,15 @@ import androidx.core.content.ContextCompat;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
+import butterknife.OnTextChanged;
+
+import static butterknife.OnTextChanged.Callback.AFTER_TEXT_CHANGED;
 
 public class TrimActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener,
         MediaPlayer.OnBufferingUpdateListener,
         MediaPlayer.OnCompletionListener,
         MediaPlayer.OnPreparedListener,
-        MediaPlayer.OnVideoSizeChangedListener {
+        MediaPlayer.OnVideoSizeChangedListener, TrimContractView {
 
 
     @BindView(R.id.textureView)
@@ -61,11 +69,28 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
     @BindView(R.id.next)
     ImageView next;
 
+    @OnTextChanged(value = R.id.search_edit_frame, callback = AFTER_TEXT_CHANGED)
+    public void afterTextChanged(Editable s) {
+        if (s.length() != 0) {
+            next.setImageResource(R.drawable.ic_play_arrow_black_24dp);
+        } else {
+            next.setImageResource(R.drawable.ic_arrow_back_black_24dp);
+        }
+        next.setOnClickListener(v -> {
+            if (s.length() != 0) {
+                presenter.action();
+            } else {
+                finish();
+            }
+        });
+    }
+
     private Surface surface;
     private MediaPlayer mMediaPlayer;
-    private VideoActions videoAction;
+    private VideoActionPresenter presenter;
     private Uri uri;
     private int code;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,107 +100,68 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         mMediaPlayer = new MediaPlayer();
         mPreview.setSurfaceTextureListener(this);
         Intent i = getIntent();
+        Constants.PinCodeMode pinCodeMode = (Constants.PinCodeMode)
+                getIntent().getSerializableExtra(Constants.EXTRA_MODE);
         if (i != null) {
             uri = Uri.parse(i.getStringExtra("uri"));
-            code = i.getIntExtra("code", -1);
             editText.setHint(i.getStringExtra("name"));
         }
-        if (code == 3) {
-            getBackground(R.drawable.grad1);
-        } else {
+        if (Constants.PinCodeMode.CROP == pinCodeMode) {
             getBackground(R.drawable.grad);
+        } else {
+            getBackground(R.drawable.grad1);
         }
         next.setImageResource(R.drawable.ic_arrow_back_black_24dp);
         next.setOnClickListener(v -> finish());
-        editText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s.length() != 0) {
-                    next.setImageResource(R.drawable.ic_play_arrow_black_24dp);
-                } else {
-                    next.setImageResource(R.drawable.ic_arrow_back_black_24dp);
-                }
-                next.setOnClickListener(v -> {
-                    if (s.length() != 0) {
-                        videoAction = new VideoActions(getApplicationContext(), uri,
-                                rangeSeekBar.getSelectedMinValue().intValue() * 1000,
-                                rangeSeekBar.getSelectedMaxValue().intValue() * 1000, s.toString());
-                        if (code == 0) {
-                            new AsyncTaskFfmpeg().execute(videoAction.crop());
-                        } else {
-                            new AsyncTaskFfmpeg().execute(videoAction.frames());
-                        }
-                    } else {
-                        finish();
-                    }
-                });
-            }
-        });
-
         setListeners();
+
+        VideoActions videoActions = new VideoActions(getApplicationContext(), uri);
+        VideoActionsModel videoActionsModel = new VideoActionsModel(videoActions, this);
+        presenter = new VideoActionPresenter(videoActionsModel, pinCodeMode);
+        presenter.attachView(this);
     }
 
-    @SuppressLint("StaticFieldLeak")
-    private class AsyncTaskFfmpeg extends AsyncTask<String, Integer, Void> {
+    @Override
+    public ContentValues getContentValues() {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("start", rangeSeekBar.getSelectedMinValue().intValue() * 1000);
+        contentValues.put("end", rangeSeekBar.getSelectedMaxValue().intValue() * 1000);
+        contentValues.put("name", Objects.requireNonNull(editText.getText()).toString());
+        return contentValues;
+    }
 
-        private ProgressDialog progress;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            progress = new ProgressDialog(TrimActivity.this);
-            progress.setTitle("Processing");
-            progress.setMessage("Please wait...");
-            progress.setIndeterminate(true);
-            progress.setCancelable(false);
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                Drawable drawable = new ProgressBar(TrimActivity.this).getIndeterminateDrawable().mutate();
-                drawable.setColorFilter(ContextCompat.getColor(TrimActivity.this, R.color.colorAccent),
-                        PorterDuff.Mode.SRC_IN);
-                progress.setIndeterminateDrawable(drawable);
+    @Override
+    public void showProgress() {
+        progressDialog = ProgressDialog.show(this, "Processing", getString(R.string.please_wait));
+        progressDialog.setIndeterminate(true);
+        progressDialog.setCancelable(false);
+        progressDialog.setOnKeyListener((dialog, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                CustomToast.getToast(getApplicationContext(), R.drawable.ic_error_outline, R.string.please_wait, R.color.blue_500, Toast.LENGTH_LONG);
             }
+            return true;
+        });
+        progressDialog.show();
+    }
 
-            progress.setOnKeyListener((dialog, keyCode, event) -> {
-
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-                    CustomToast.getToast(getApplicationContext(), R.drawable.ic_error_outline, R.string.please_wait, R.color.blue_500, Toast.LENGTH_LONG);
-
-                }
-
-                return true;
-            });
-            progress.show();
+    @Override
+    public void hideProgress() {
+        if (progressDialog != null) {
+            progressDialog.dismiss();
         }
+    }
 
-        @Override
-        protected Void doInBackground(String... command) {
-            FFmpeg.execute(command);
-            return null;
-        }
+    @Override
+    public void showToast(int color, int drawable, int message) {
+        CustomToast.getToast(getApplicationContext(), drawable, message, color, Toast.LENGTH_LONG);
+    }
 
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-            progress.setProgress(values[0]);
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            super.onPostExecute(result);
-            progress.dismiss();
-            CustomToast.getToast(getApplicationContext(), R.drawable.ic_done, R.string.successfully, R.color.green, Toast.LENGTH_LONG);
-            finish();
-        }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        presenter.detachView();
+        mMediaPlayer.release();
+        mMediaPlayer = null;
     }
 
     @Override
@@ -183,12 +169,6 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         super.onBackPressed();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mMediaPlayer.release();
-        mMediaPlayer = null;
-    }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surfaces, int width, int height) {

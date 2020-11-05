@@ -4,7 +4,7 @@ import android.os.Environment;
 
 import java.io.File;
 
-public class SaveFrames implements FileI {
+public class SaveFrames extends FileImpl {
 
     @Override
     public File saveFile(String n) {
@@ -14,18 +14,6 @@ public class SaveFrames implements FileI {
         return new File(folder, filePrefix + fileExt);
     }
 
-    @Override
-    public File mkDir(String a) {
-        File folder = new File(Environment.getExternalStorageDirectory().getAbsolutePath().concat("/") + a);
-        if (!folder.exists()) {
-            if (folder.mkdir()) {
-
-            }
-        } else {
-
-        }
-        return folder;
-    }
 }
 
 

@@ -7,24 +7,18 @@ public class VideoActions {
 
     private CropVideo cropVideo;
     private FramesVideo framesVideo;
-    private int a;
-    private int b;
-    private String n;
 
-    public VideoActions(Context context, Uri uri, int a, int b, String n) {
+    public VideoActions(Context context, Uri uri) {
         RealPathFromUri realPathFromUri = new RealPathFromUri(context);
         cropVideo = new CropVideo(context, uri, realPathFromUri);
         framesVideo = new FramesVideo(uri, realPathFromUri);
-        this.a = a;
-        this.b = b;
-        this.n = n;
     }
 
-    public String[] crop() {
+    public String[] crop(int a, int b, String n) {
         return cropVideo.action(a, b, n);
     }
 
-    public String[] frames() {
+    public String[] frames(int a, int b, String n) {
         return framesVideo.action(a, b, n);
     }
 
