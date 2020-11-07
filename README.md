@@ -1,4 +1,4 @@
-# Ffmpeg_Android, MVP, Dagger2, ButterKnife
+## MVP, Dagger2, ButterKnife
 
 The application is written to demonstrate how to trim a video file and retrieve frames from a video file.
 
