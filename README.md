@@ -1,4 +1,5 @@
-# Ffmpeg_Android
+# Ffmpeg_Android, MVP, Dagger2, ButterKnife
+
 The application is written to demonstrate how to trim a video file and retrieve frames from a video file.
 
 <img src="https://github.com/dmitriykotov333/Ffmpeg_Android/blob/master/pr5.jpg" width="30%" height="30%"><img src="https://github.com/dmitriykotov333/Ffmpeg_Android/blob/master/pr6.jpg" width="30%" height="30%"><img src="https://github.com/dmitriykotov333/Ffmpeg_Android/blob/master/pr7.jpg" width="30%" height="30%"><img src="https://github.com/dmitriykotov333/Ffmpeg_Android/blob/master/pr8.jpg" width="30%" height="30%">
