@@ -1,49 +1,42 @@
 package com.kotov.ffmpeg;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
-import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
-import com.arthenica.mobileffmpeg.FFmpeg;
+import com.kotov.ffmpeg.dagger.App;
+import com.kotov.ffmpeg.dagger.subcomponent.VideoActionsModule;
+import com.kotov.ffmpeg.dagger.subcomponent.ControllerComponent;
 import com.kotov.ffmpeg.mvp.Constants;
 import com.kotov.ffmpeg.mvp.TrimContractView;
 import com.kotov.ffmpeg.mvp.VideoActionPresenter;
-import com.kotov.ffmpeg.mvp.VideoActionsModel;
-import com.kotov.ffmpeg.trim.VideoActions;
 
 import org.florescu.android.rangeseekbar.RangeSeekBar;
 
 import java.io.IOException;
 import java.util.Objects;
 
+import javax.inject.Inject;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatEditText;
-import androidx.core.content.ContextCompat;
 import butterknife.BindView;
-import butterknife.BindViews;
 import butterknife.ButterKnife;
 import butterknife.OnTextChanged;
 
@@ -85,11 +78,13 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         });
     }
 
+    @Inject
+    VideoActionPresenter presenter;
+    private ControllerComponent mControllerComponent;
+
     private Surface surface;
     private MediaPlayer mMediaPlayer;
-    private VideoActionPresenter presenter;
     private Uri uri;
-    private int code;
     private ProgressDialog progressDialog;
 
     @Override
@@ -97,11 +92,12 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trim);
         ButterKnife.bind(this);
+        Constants.PinCodeMode pinCodeMode = (Constants.PinCodeMode)
+                getIntent().getSerializableExtra(Constants.EXTRA_MODE);
+
         mMediaPlayer = new MediaPlayer();
         mPreview.setSurfaceTextureListener(this);
         Intent i = getIntent();
-        Constants.PinCodeMode pinCodeMode = (Constants.PinCodeMode)
-                getIntent().getSerializableExtra(Constants.EXTRA_MODE);
         if (i != null) {
             uri = Uri.parse(i.getStringExtra("uri"));
             editText.setHint(i.getStringExtra("name"));
@@ -115,9 +111,14 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         next.setOnClickListener(v -> finish());
         setListeners();
 
-        VideoActions videoActions = new VideoActions(getApplicationContext(), uri);
-        VideoActionsModel videoActionsModel = new VideoActionsModel(videoActions, this);
-        presenter = new VideoActionPresenter(videoActionsModel, pinCodeMode);
+        // VideoActions videoActions = new VideoActions(getApplicationContext(), uri);
+        //VideoActionsModel videoActionsModel = new VideoActionsModel(videoActions, this);
+        //presenter = new VideoActionPresenter(videoActionsModel, pinCodeMode);
+        /*
+         * Dagger
+         */
+        App.getInstance().getVideoActionsComponent().newControllerComponent(new VideoActionsModule(getApplicationContext(),
+                pinCodeMode, TrimActivity.this, uri)).inject(TrimActivity.this);
         presenter.attachView(this);
     }
 
@@ -258,6 +259,7 @@ public class TrimActivity extends AppCompatActivity implements TextureView.Surfa
         super.onResume();
         mPreview.requestLayout();
         mMediaPlayer.start();
+        uri = Uri.parse(getIntent().getStringExtra("uri"));
     }
 
     @Override
