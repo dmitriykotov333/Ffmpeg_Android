@@ -67,5 +67,31 @@
         <item name="android:topBright">@color/green_500</item>
         <item name="android:topDark">@color/green_500</item>
     </style>
+    <style name="VWView">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:layout_weight">1</item>
+    </style>
 
+    <style name="WView">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+    <style name="ImageTrim">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">55dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:background">@color/colorBlack</item>
+    </style>
+
+    <style name="TxtRgStyle22">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/colorTxt</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:layout_marginTop">@dimen/_5sdp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
 </resources>
