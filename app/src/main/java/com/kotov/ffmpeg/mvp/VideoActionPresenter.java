@@ -1,9 +1,16 @@
 package com.kotov.ffmpeg.mvp;
 
+import android.app.Activity;
 import android.content.ContentValues;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.text.TextUtils;
+import android.widget.ImageView;
 
 import com.kotov.ffmpeg.R;
+
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class VideoActionPresenter {
 
@@ -23,6 +30,10 @@ public class VideoActionPresenter {
 
     public void detachView() {
         view = null;
+    }
+
+    public List<ImageView> getAllImages() {
+        return model.getBitmap();
     }
 
     public void action() {

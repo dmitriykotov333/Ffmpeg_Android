@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("IntentReset")
     public void onButton(View view) {
-        Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         i.setType("video/*");
         if (tabLayout.getSelectedTabPosition() == 0) {
             startActivityForResult(i, 100);

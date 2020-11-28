@@ -32,14 +32,22 @@
             android:layout_alignParentBottom="true"
             android:layout_marginStart="24dp"
             android:layout_marginTop="@dimen/_65sdp"
+            android:layout_centerInParent="true"
             android:layout_marginBottom="@dimen/_100sdp"
             android:layout_marginEnd="24dp">
-            <com.kotov.ffmpeg.view_custom.AutoFitTextureView
+           <!-- <com.kotov.ffmpeg.view_custom.AutoFitTextureView
                 android:id="@+id/textureView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:focusable="true" />
+                android:focusable="true" />-->
+            <com.google.android.exoplayer2.ui.SimpleExoPlayerView
+                android:id="@+id/player_view_lib"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                app:use_controller="false"
+                android:layout_gravity="center_vertical"/>
             <ImageView
                 style="@style/WView"
                 android:src="@drawable/ic_video_play_lib"

@@ -1,4 +1,4 @@
-package com.kotov.ffmpeg.dagger.subcomponent;
+package com.kotov.ffmpeg.dagger2.subcomponent;
 
 import android.app.Activity;
 import android.content.Context;
@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.widget.ImageView;
 
 import com.kotov.ffmpeg.dagger.subcomponent.ControllerScope;
-import com.kotov.ffmpeg.dagger2_9.subcomponent_builder.TrimActivityScope;
 import com.kotov.ffmpeg.mvp.Constants;
 import com.kotov.ffmpeg.mvp.VideoActionPresenter;
 import com.kotov.ffmpeg.mvp.VideoActionsModel;
@@ -18,15 +17,14 @@ import dagger.Module;
 import dagger.Provides;
 
 @Module
-public class VideoActionsModule {
+public class TrimActivityModule {
 
     private final Context context;
     private final Uri uri;
     private final Activity activity;
     private final Constants.PinCodeMode pinCodeMode;
     private final List<ImageView> imageViews;
-
-    public VideoActionsModule(Context context, Constants.PinCodeMode pinCodeMode, Activity activity, Uri uri, List<ImageView> imageViews) {
+    public TrimActivityModule(Context context, Constants.PinCodeMode pinCodeMode, Activity activity, Uri uri, List<ImageView> imageViews) {
         this.context = context;
         this.pinCodeMode = pinCodeMode;
         this.activity = activity;
@@ -35,49 +33,48 @@ public class VideoActionsModule {
     }
 
 
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     Context provideContext() {
         return context;
     }
 
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     Activity provideActivity() {
         return activity;
     }
 
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     Constants.PinCodeMode provideConstantsPinCodeMode() {
         return pinCodeMode;
     }
 
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     Uri provideUri() {
         return uri;
     }
 
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     List<ImageView> provideImageView() {
         return imageViews;
     }
-
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     VideoActions provideVideoActions(Context context, Uri uri, Activity activity, List<ImageView> imageViews) {
         return new VideoActions(context, uri, activity, imageViews);
     }
 
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     VideoActionsModel provideVideoActionsModel(VideoActions videoActions, Activity activity) {
         return new VideoActionsModel(videoActions, activity);
     }
 
-    @ControllerScope
+    @FirstActivityScope
     @Provides
     VideoActionPresenter provideVideoActionPresenter(VideoActionsModel videoActionsModel, Constants.PinCodeMode pinCodeMode) {
         return new VideoActionPresenter(videoActionsModel, pinCodeMode);

@@ -4,15 +4,28 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.widget.ImageView;
 
 import com.arthenica.mobileffmpeg.FFmpeg;
+import com.kotov.ffmpeg.TrimActivity;
+import com.kotov.ffmpeg.TrimmerUtils;
 import com.kotov.ffmpeg.trim.VideoActions;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class VideoActionsModel {
 
     private final VideoActions videoActions;
+
     private Activity activity;
+
     public VideoActionsModel(VideoActions videoActions, Activity activity) {
         this.videoActions = videoActions;
         this.activity = activity;
@@ -23,15 +36,18 @@ public class VideoActionsModel {
         trimVideoOnFramesTask.execute(contentValues);
     }
 
-    public void getCrop(ContentValues contentValues , CompleteCallback completeCallback) {
+    public void getCrop(ContentValues contentValues, CompleteCallback completeCallback) {
         CropVideoTask cropVideoTask = new CropVideoTask(completeCallback);
         cropVideoTask.execute(contentValues);
+    }
+
+    public List<ImageView> getBitmap() {
+        return videoActions.frameBySec();
     }
 
     interface CompleteCallback {
         void onComplete();
     }
-
 
     @SuppressLint("StaticFieldLeak")
     class TrimVideoOnFramesTask extends AsyncTask<ContentValues, Void, Void> {
