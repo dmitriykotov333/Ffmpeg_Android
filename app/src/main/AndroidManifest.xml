@@ -13,9 +13,9 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true"
         tools:targetApi="q"
-        android:name=".dagger2_9.App">
+        android:name=".di.BaseApplication">
         <activity
-            android:name=".MainActivity"
+            android:name=".app.ui.activities.MainActivity"
             android:label="@string/app_name"
             android:configChanges="orientation|keyboardHidden"
 
@@ -27,7 +27,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".TrimActivity"
+        <activity android:name=".app.ui.activities.TrimActivity"
             android:screenOrientation="portrait"/>
     </application>
 
